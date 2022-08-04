@@ -25,7 +25,7 @@ class VenueForm(Form):
     )
     state = SelectField(
         'state', validators=[DataRequired()],
-        choices=[
+        choices=[   
             ('AL', 'AL'),
             ('AK', 'AK'),
             ('AZ', 'AZ'),

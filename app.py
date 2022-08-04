@@ -33,7 +33,11 @@ migrate = Migrate(app, db)
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
-
+shows = db.Table('shows',
+    db.Column('Artist_id', db.Integer, db.ForeignKey('Artist.id'), primary_key=True),
+    db.Column('Venue_id', db.Integer, db.ForeignKey('Venue.id'), primary_key=True),
+    db.Column('start_time',db.DateTime,nullable=False)
+)
 class Venue(db.Model):
     __tablename__ = 'Venue'
 
@@ -49,7 +53,8 @@ class Venue(db.Model):
     website_link = db.Column(db.String(120))
     seeking_description = db.Column(db.String(500))
     looking_for_talent = db.Column(db.Boolean, default = False)
-
+    artist = db.relationship('Artist', secondary=shows,
+      backref=db.backref('venue', lazy=True))
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
 class Artist(db.Model):
@@ -66,6 +71,8 @@ class Artist(db.Model):
     image_link = db.Column(db.String(120))
     looking_for_venue = db.Column(db.Boolean, default = False)
     seeking_description = db.Column(db.String(500))
+    
+
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -234,8 +241,39 @@ def create_venue_form():
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
-  # TODO: modify data to be the data object returned from db insertion
 
+  try:
+    name = request.form.get('name')
+    city = request.form.get('city')
+    state = request.form.get('state')
+    address = request.form.get('address')
+    phone = request.form.get('phone')
+    genres = request.form.get('genres')
+    facebook_link = request.form.get('facebook_link')
+    image_link = request.form.get('image_link')
+    website_link = request.form.get('website_link')
+    seeking_talent = request.form.get('seeking_talent')
+    seeking_description = request.form.get('seeking_description')
+    print('############################')
+    print(name)
+    print(city)
+    print(state)
+    print(address)
+    print(phone)
+    print(genres)
+    print(facebook_link)
+    print(image_link)
+    print(website_link)
+    print(seeking_talent)
+    print(seeking_description)
+    # todo = Todo(description=description)
+    # db.session.add(todo)
+    # db.session.commit()
+    # print(description)
+    # return redirect(url_for('index'))
+  # TODO: modify data to be the data object returned from db insertion
+  except:
+    pass
   # on successful db insert, flash success
   flash('Venue ' + request.form['name'] + ' was successfully listed!')
   # TODO: on unsuccessful db insert, flash an error instead.
