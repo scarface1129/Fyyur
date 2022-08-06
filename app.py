@@ -2,6 +2,7 @@
 # Imports
 #----------------------------------------------------------------------------#
 import sys
+import re
 import json
 import dateutil.parser
 import babel
@@ -254,10 +255,18 @@ def show_artist(artist_id):
       upcoming_shows.append(items)
     else:
       past_shows.append(items) 
-  print(upcoming_shows)
-  print(past_shows)
   data = Artist.query.get(artist_id)
-  context = {"data":data,'upcoming_shows':upcoming_shows,"past_shows":past_shows}
+  my_string = data.genres
+  my_list = my_string.split(",")
+  if len(my_list)>1:
+    last = my_list[-1]
+    last = last.rstrip(last[-1])
+    first = my_list[0]
+    first = first.lstrip(first[0])
+    my_list[0] = first
+    my_list[-1] = last
+    # name = my_list[-1].rstrip(my_list[-1])
+  context = {"data":data,'upcoming_shows':upcoming_shows,"past_shows":past_shows,"geners":my_list}
   return render_template('pages/show_artist.html', artist=context)
 
 #  Update
@@ -280,7 +289,7 @@ def edit_artist_submission(artist_id):
     artist.city = request.form.get('city')
     artist.state = request.form.get('state')
     artist.phone = request.form.get('phone')
-    artist.genres = request.form.get('genres')
+    artist.genres = request.form.getlist('genres')
     artist.facebook_link = request.form.get('facebook_link')
     artist.image_link = request.form.get('image_link')
     artist.website_link = request.form.get('website_link')
@@ -316,7 +325,7 @@ def edit_venue_submission(venue_id):
     venue.state = request.form.get('state')
     venue.address = request.form.get('address')
     venue.phone = request.form.get('phone')
-    venue.genres = request.form.get('genres')
+    venue.genres = request.form.getlist('genres')
     venue.facebook_link = request.form.get('facebook_link')
     venue.image_link = request.form.get('image_link')
     venue.website_link = request.form.get('website_link')
@@ -353,7 +362,7 @@ def create_artist_submission():
   city = request.form.get('city')
   state = request.form.get('state')
   phone = request.form.get('phone')
-  genres = request.form.get('genres')
+  genres = request.form.getlist('genres')
   facebook_link = request.form.get('facebook_link')
   image_link = request.form.get('image_link')
   website_link = request.form.get('website_link')
