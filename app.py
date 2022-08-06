@@ -8,7 +8,7 @@ import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
 from flask_migrate import Migrate
-import datetime
+from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
@@ -120,6 +120,7 @@ def index():
 def venues():
   # TODO: replace with real venues data.
   #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
+  
   data= Venue.query.order_by('id').all()
   return render_template('pages/venues.html', data=data)
 
@@ -128,24 +129,31 @@ def search_venues():
   # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for Hop should return "The Musical Hop".
   # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
-  response={
-    "count": 1,
-    "data": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }
-  return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+  keyword = request.form.get('search_term')
+  look_for = '%{0}%'.format(keyword)
+  venues = Venue.query.filter(Venue.name.ilike(look_for)).all()
+  count = len(venues)
+  context = {'data':venues,'count':count}
+  return render_template('pages/search_venues.html', results=context, search_term=request.form.get('search_term', ''))
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
-  
+  upcoming_shows = []
+  past_shows = []
+  CurrentDate = datetime.now()
+  events = Events.query.filter_by(venue_id = venue_id).all() 
+  for items in events:
+    if items.start_time > CurrentDate:
+      upcoming_shows.append(items)
+    else:
+      past_shows.append(items) 
+  print(upcoming_shows)
+  print(past_shows)
   data = Venue.query.get(venue_id)
-  print(data)
-  return render_template('pages/show_venue.html', venue=data)
+  context = {"data":data,'upcoming_shows':upcoming_shows,"past_shows":past_shows}
+  return render_template('pages/show_venue.html', venue=context)
 
 #  Create Venue
 #  ----------------------------------------------------------------
@@ -223,23 +231,34 @@ def search_artists():
   # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
   # search for "band" should return "The Wild Sax Band".
-  response={
-    "count": 1,
-    "data": [{
-      "id": 4,
-      "name": "Guns N Petals",
-      "num_upcoming_shows": 0,
-    }]
-  }
-  return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
+  keyword = request.form.get('search_term')
+  look_for = '%{0}%'.format(keyword)
+  artists = Artist.query.filter(Artist.name.ilike(look_for)).all()
+  count = len(artists)
+  print(count)
+  context = {'data':artists,'count':count}
+  return render_template('pages/search_artists.html', results=context, search_term=request.form.get('search_term', ''))
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
   # shows the artist page with the given artist_id
   # TODO: replace with real artist data from the artist table, using artist_id
   # list(filter(lambda d: d['id'] == artist_id, [data1, data2, data3]))[0]
+  
+  upcoming_shows = []
+  past_shows = []
+  CurrentDate = datetime.now()
+  events = Events.query.filter_by(artist_id = artist_id).all() 
+  for items in events:
+    if items.start_time > CurrentDate:
+      upcoming_shows.append(items)
+    else:
+      past_shows.append(items) 
+  print(upcoming_shows)
+  print(past_shows)
   data = Artist.query.get(artist_id)
-  return render_template('pages/show_artist.html', artist=data)
+  context = {"data":data,'upcoming_shows':upcoming_shows,"past_shows":past_shows}
+  return render_template('pages/show_artist.html', artist=context)
 
 #  Update
 #  ----------------------------------------------------------------
@@ -381,7 +400,7 @@ def shows():
   # displays list of shows at /shows
   # TODO: replace with real venues data.
   data=Events.query.order_by('id').all()
-  context = {'shows':data,'datetime':datetime}
+  context = {'shows':data}
   return render_template('pages/shows.html', data = context)
 
 @app.route('/shows/create')
