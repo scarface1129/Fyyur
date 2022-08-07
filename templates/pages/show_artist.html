@@ -30,7 +30,10 @@
         </p>
 		{% if artist.data.booking_days %}
 		<p class="not-seeking">
-			<i class="fas fa-star"></i><b>Available Only On:</b> {{artist.data.booking_days}}
+			<i class="fas fa-star"></i><b>Available Only On:</b>
+			{% for items in artist.WorkingDays %}
+			<span class="genre">{{ items| upper }}</span>
+			{% endfor %}
 		</p>
 		{% else %}
 		<p class="not-seeking">

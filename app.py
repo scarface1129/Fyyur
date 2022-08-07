@@ -111,6 +111,30 @@ app.jinja_env.filters['datetime'] = format_datetime
 #----------------------------------------------------------------------------#
 # Controllers.
 #----------------------------------------------------------------------------#
+def seperateItems(item):
+  if item == None:
+    return None
+  my_list = item.split(",")
+  if len(my_list)>1:
+    last = my_list[-1]
+    if last[-1] == '}':
+      last = last.rstrip(last[-1])
+    first = my_list[0]
+    if first[0] == '{':
+      first = first.lstrip(first[0])
+    my_list[0] = first
+    my_list[-1] = last
+    return my_list
+
+def getDayOfTheWeek(date):
+  # print(type(date))
+  weekday = date.weekday()
+  weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Sarturday','Sunday']
+  for item in weekdays:
+    if weekdays.index(item) == weekday:
+      return weekdays[weekday]
+      
+
 
 @app.route('/')
 def index():
@@ -122,12 +146,6 @@ def index():
   context = {'venues':venues, 'artists':artists}
   return render_template('pages/home.html', data=context)
 
-def getDayOfTheWeek(date):
-  weekday = date.weekday()
-  weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Sarturday','Sunday']
-  for item in weekdays:
-    if weekdays.index(item) == weekday:
-      print(weekdays[weekday-1])
 #  Venues
 #  ----------------------------------------------------------------
 
@@ -304,15 +322,11 @@ def show_artist(artist_id):
       past_shows.append(items) 
   data = Artist.query.get(artist_id)
   my_string = data.genres
-  my_list = my_string.split(",")
-  if len(my_list)>1:
-    last = my_list[-1]
-    last = last.rstrip(last[-1])
-    first = my_list[0]
-    first = first.lstrip(first[0])
-    my_list[0] = first
-    my_list[-1] = last
-  context = {"data":data,'upcoming_shows':upcoming_shows,"past_shows":past_shows,"geners":my_list}
+  availableDays = data.booking_days
+  my_list = seperateItems(my_string)
+  my_days_of_work = seperateItems(availableDays)
+  print(my_days_of_work)
+  context = {"data":data,'upcoming_shows':upcoming_shows,"past_shows":past_shows,"geners":my_list,'WorkingDays':my_days_of_work}
   return render_template('pages/show_artist.html', artist=context)
 
 #  Update
@@ -478,8 +492,18 @@ def create_show_submission():
     venue_id = request.form.get('venue_id')
     artist_id = request.form.get('artist_id')
     start_time = request.form.get('start_time')
-
+    format = '%Y-%m-%d %H:%M:%S'
+    converted_time = datetime.strptime(start_time, format)
     artist = Artist.query.get(artist_id)
+    day = getDayOfTheWeek(converted_time)
+    availableDays = seperateItems(artist.booking_days)
+    print(day)
+    print(availableDays)
+    if day not in availableDays:
+      flash('The Artist is Not available at the moment! check artist Profile to see when Artist will be available')
+      return redirect(url_for('shows/create'))
+    
+
     venue = Venue.query.get(venue_id)
     event = Events(start_time=start_time)
     event.venue = venue
