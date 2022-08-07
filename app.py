@@ -305,7 +305,26 @@ def search_artists():
   count = len(array)
   context = {'data':array,'count':count}
   return render_template('pages/search_artists.html', results=context, search_term=request.form.get('search_term', ''))
+@app.route('/show/search', methods=['POST'])
+def show_search():
+  keyword = request.form.get('search_term')
+  look_for = '%{0}%'.format(keyword)
+  artists = Artist.query.filter(Artist.name.ilike(look_for)).all()
+  artist_city = Artist.query.filter(Artist.city.ilike(look_for)).all()
+  artist_state = Artist.query.filter(Artist.state.ilike(look_for)).all()
+  venues = Venue.query.filter(Venue.name.ilike(look_for)).all()
+  city = Venue.query.filter(Venue.city.ilike(look_for)).all()
+  state = Venue.query.filter(Venue.state.ilike(look_for)).all()
+  array = []
+  if artists or artist_city or artist_state or venues or city or state:
+    data = artists + artist_city + artist_state + venues + city + state
+    for item in data:
+      if item not in array:
+        array.append(item)
 
+  count = len(array)
+  context = {'data':array,'count':count}
+  return render_template('pages/show.html', data = context)
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
   # shows the artist page with the given artist_id
@@ -478,6 +497,8 @@ def shows():
   context = {'shows':data}
   return render_template('pages/shows.html', data = context)
 
+
+
 @app.route('/shows/create')
 def create_shows():
   # renders form. do not touch.
@@ -495,7 +516,6 @@ def create_show_submission():
     artist = Artist.query.get(artist_id)
 
     if artist.booking_days:
-      print('#################')
       format = '%Y-%m-%d %H:%M:%S'
       converted_time = datetime.strptime(start_time, format)
       day = getDayOfTheWeek(converted_time)
