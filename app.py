@@ -17,6 +17,7 @@ from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
 import collections
+from models import *
 from sqlalchemy import desc
 collections.Callable = collections.abc.Callable  #by me
 #installed a lesser version of jinja2 to be compatible with flask_moment
@@ -38,7 +39,8 @@ migrate = Migrate(app, db)
 # Models.
 #----------------------------------------------------------------------------#
 
-
+import models
+# models.py
 class Events(db.Model):
   __tablename__ = 'Events'
   id = db.Column(db.Integer,primary_key=True, nullable=False, autoincrement=True)
@@ -140,9 +142,7 @@ def getDayOfTheWeek(date):
 def index():
   artists = Artist.query.order_by(desc('id')).all()[:5]
   venues = Venue.query.order_by(desc('id')).all()[:5]
-  event = Events.query.filter_by(id=1).all()[0]
-  date = event.start_time
-  getDayOfTheWeek(date)
+  event = Events.query.filter_by(id=1).all()[:0]
   context = {'venues':venues, 'artists':artists}
   return render_template('pages/home.html', data=context)
 
@@ -219,8 +219,8 @@ def create_venue_submission():
   city = request.form.get('city')
   state = request.form.get('state')
   address = request.form.get('address')
-  phone = request.form.getlist('phone')
-  genres = request.form.get('genres')
+  phone = request.form.get('phone')
+  genres = request.form.getlist('genres')
   facebook_link = request.form.get('facebook_link')
   image_link = request.form.get('image_link')
   website_link = request.form.get('website_link')
@@ -396,7 +396,6 @@ def edit_venue_submission(venue_id):
     else:
       venue.looking_for_talent = False
     venue.seeking_description = request.form.get('seeking_description')
-    print(request.form.get('seeking_description'))
     db.session.commit()
   except:
     db.session.rollback()
