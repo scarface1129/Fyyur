@@ -9,13 +9,15 @@ import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
 from flask_migrate import Migrate
+import datetime
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
-import collections #by me
+import collections
+from sqlalchemy import desc
 collections.Callable = collections.abc.Callable  #by me
 #installed a lesser version of jinja2 to be compatible with flask_moment
 # installed Werkzeug==2.0.0 to stop the error --> cannot import name 'safe_str_cmp' from 'werkzeug.security'
@@ -59,7 +61,7 @@ class Venue(db.Model):
     website_link = db.Column(db.String(120))
     seeking_description = db.Column(db.String(500))
     looking_for_talent = db.Column(db.Boolean, default = False)
-    shows = db.relationship('Events', backref='venue', lazy = True)
+    shows = db.relationship('Events', backref='venue',cascade='all, delete-orphan', lazy = True)
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
     def __repr__(self):
@@ -78,7 +80,7 @@ class Artist(db.Model):
     facebook_link = db.Column(db.String(120))
     looking_for_venue = db.Column(db.Boolean, default = False)
     seeking_description = db.Column(db.String(500))
-    shows = db.relationship('Events', backref='artist', lazy = True)
+    shows = db.relationship('Events', backref='artist',cascade='all, delete-orphan', lazy = True)
 
     
 
@@ -111,7 +113,17 @@ app.jinja_env.filters['datetime'] = format_datetime
 
 @app.route('/')
 def index():
-  return render_template('pages/home.html')
+  artists = Artist.query.order_by(desc('id')).all()[:5]
+  venues = Venue.query.order_by(desc('id')).all()[:5]
+  event = Events.query.filter_by(id=1).all()[0]
+  date = event.start_time
+  weekday = date.weekday()
+  weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Sarturday','Sunday']
+  for item in weekdays:
+    if item.index = weekday:
+      print(weekdays[weekday])
+  context = {'venues':venues, 'artists':artists}
+  return render_template('pages/home.html', data=context)
 
 
 #  Venues
@@ -133,8 +145,17 @@ def search_venues():
   keyword = request.form.get('search_term')
   look_for = '%{0}%'.format(keyword)
   venues = Venue.query.filter(Venue.name.ilike(look_for)).all()
-  count = len(venues)
-  context = {'data':venues,'count':count}
+  city = Venue.query.filter(Venue.city.ilike(look_for)).all()
+  state = Venue.query.filter(Venue.state.ilike(look_for)).all()
+  array = []
+  if venues or city or state:
+    data = venues + city + state
+    for item in data:
+      if item not in array:
+        array.append(item)
+
+  count = len(array)
+  context = {'data':array,'count':count}
   return render_template('pages/search_venues.html', results=context, search_term=request.form.get('search_term', ''))
 
 @app.route('/venues/<int:venue_id>')
@@ -150,10 +171,17 @@ def show_venue(venue_id):
       upcoming_shows.append(items)
     else:
       past_shows.append(items) 
-  print(upcoming_shows)
-  print(past_shows)
   data = Venue.query.get(venue_id)
-  context = {"data":data,'upcoming_shows':upcoming_shows,"past_shows":past_shows}
+  my_string = data.geners
+  my_list = my_string.split(",")
+  if len(my_list)>1:
+    last = my_list[-1]
+    last = last.rstrip(last[-1])
+    first = my_list[0]
+    first = first.lstrip(first[0])
+    my_list[0] = first
+    my_list[-1] = last
+  context = {"data":data,'upcoming_shows':upcoming_shows,"past_shows":past_shows,'geners':my_list}
   return render_template('pages/show_venue.html', venue=context)
 
 #  Create Venue
@@ -171,7 +199,7 @@ def create_venue_submission():
   city = request.form.get('city')
   state = request.form.get('state')
   address = request.form.get('address')
-  phone = request.form.get('phone')
+  phone = request.form.getlist('phone')
   genres = request.form.get('genres')
   facebook_link = request.form.get('facebook_link')
   image_link = request.form.get('image_link')
@@ -200,21 +228,32 @@ def create_venue_submission():
     flash('An error occurred. Venue ' + name + ' could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
   db.session.close()
-  return render_template('pages/home.html')
+  artists = Artist.query.order_by(desc('id')).all()[:5]
+  venues = Venue.query.order_by(desc('id')).all()[:5]
+  context = {'venues':venues, 'artists':artists}
+  return render_template('pages/home.html', data=context)
 
 @app.route('/venues/<venue_id>/delete')
 def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
   try:
-      venue = Venue.query.get(venue_id)
-      db.session.delete(venue)
-      db.session.commit()
+    venue = Venue.query.get(venue_id)
+    event = Events.query.filter_by(venue_id = venue_id).all()
+    print(event)
+    db.session.delete(venue)
+    db.session.commit()
+    db.session.delete(event)
+    db.session.commit()
+
   except:
     db.session.rollback()
   finally:
-      db.session.close()
-      return redirect(url_for('index'))
+    db.session.close()
+    artists = Artist.query.order_by(desc('id')).all()[:5]
+    venues = Venue.query.order_by(desc('id')).all()[:5]
+    context = {'venues':venues, 'artists':artists}
+    return redirect(url_for('index',data=context))
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
   
@@ -235,9 +274,17 @@ def search_artists():
   keyword = request.form.get('search_term')
   look_for = '%{0}%'.format(keyword)
   artists = Artist.query.filter(Artist.name.ilike(look_for)).all()
-  count = len(artists)
-  print(count)
-  context = {'data':artists,'count':count}
+  city = Artist.query.filter(Artist.city.ilike(look_for)).all()
+  state = Artist.query.filter(Artist.state.ilike(look_for)).all()
+  array = []
+  if artists or city or state:
+    data = artists + city + state
+    for item in data:
+      if item not in array:
+        array.append(item)
+
+  count = len(array)
+  context = {'data':array,'count':count}
   return render_template('pages/search_artists.html', results=context, search_term=request.form.get('search_term', ''))
 
 @app.route('/artists/<int:artist_id>')
@@ -249,7 +296,7 @@ def show_artist(artist_id):
   upcoming_shows = []
   past_shows = []
   CurrentDate = datetime.now()
-  events = Events.query.filter_by(artist_id = artist_id).all() 
+  events = Events.query.filter_by(artist_id = artist_id).all()
   for items in events:
     if items.start_time > CurrentDate:
       upcoming_shows.append(items)
@@ -265,7 +312,6 @@ def show_artist(artist_id):
     first = first.lstrip(first[0])
     my_list[0] = first
     my_list[-1] = last
-    # name = my_list[-1].rstrip(my_list[-1])
   context = {"data":data,'upcoming_shows':upcoming_shows,"past_shows":past_shows,"geners":my_list}
   return render_template('pages/show_artist.html', artist=context)
 
@@ -325,7 +371,7 @@ def edit_venue_submission(venue_id):
     venue.state = request.form.get('state')
     venue.address = request.form.get('address')
     venue.phone = request.form.get('phone')
-    venue.genres = request.form.getlist('genres')
+    venue.geners = request.form.getlist('genres')
     venue.facebook_link = request.form.get('facebook_link')
     venue.image_link = request.form.get('image_link')
     venue.website_link = request.form.get('website_link')
@@ -335,6 +381,7 @@ def edit_venue_submission(venue_id):
     else:
       venue.looking_for_talent = False
     venue.seeking_description = request.form.get('seeking_description')
+    print(request.form.get('seeking_description'))
     db.session.commit()
   except:
     db.session.rollback()
@@ -386,20 +433,23 @@ def create_artist_submission():
     db.session.rollback()
     print(sys.exc_info())
     flash('An error occurred. Artist ' + name + ' could not be listed.')
-  return render_template('pages/home.html')
+  artists = Artist.query.order_by(desc('id')).all()[:5]
+  venues = Venue.query.order_by(desc('id')).all()[:5]
+  context = {'venues':venues, 'artists':artists}
+  return render_template('pages/home.html', data=context)
 
 
-@app.route('/artists/<artist_id>/delete')
-def delete_artist(artist_id):
-  try:
-      artist = Artist.query.get(artist_id)
-      db.session.delete(artist)
-      db.session.commit()
-  except:
-    db.session.rollback()
-  finally:
-      db.session.close()
-      return redirect(url_for('index'))
+# @app.route('/artists/<artist_id>/delete')
+# def delete_artist(artist_id):
+#   try:
+#       artist = Artist.query.get(artist_id)
+#       db.session.delete(artist)
+#       db.session.commit()
+#   except:
+#     db.session.rollback()
+#   finally:
+#       db.session.close()
+#       return redirect(url_for('index'))
 
 #  Shows
 #  ----------------------------------------------------------------
@@ -443,8 +493,11 @@ def create_show_submission():
     # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
     print(sys.exc_info())
   finally:
-    db.session.close()           
-    return render_template('pages/home.html')
+    db.session.close()
+    artists = Artist.query.order_by(desc('id')).all()[:5]
+    venues = Venue.query.order_by(desc('id')).all()[:5]
+    context = {'venues':venues, 'artists':artists}           
+    return render_template('pages/home.html', data = context)
     
   
   

@@ -10,7 +10,9 @@
 			ID: {{ venue.data.id }}
 		</p>
 		<div class="genres">
-			<span class="genre">{{ venue.data.geners  }}</span>
+		{% for item in venue.geners %}
+			<span class="genre">{{ item  }}</span>
+		{% endfor %}
 		</div>
 		<p>
 			<i class="fas fa-globe-americas"></i> {{ venue.data.city }}, {{ venue.data.state }}
@@ -31,7 +33,7 @@
 		<div class="seeking">
 			<p class="lead">Currently seeking talent</p>
 			<div class="description">
-				<i class="fas fa-quote-left"></i> {{ venue.seeking_description }} <i class="fas fa-quote-right"></i>
+				<i class="fas fa-quote-left"></i> {{ venue.data.seeking_description }} <i class="fas fa-quote-right"></i>
 			</div>
 		</div>
 		{% else %}	
