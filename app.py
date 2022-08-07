@@ -7,11 +7,11 @@ import json
 import dateutil.parser
 import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
-from flask_moment import Moment
-from flask_migrate import Migrate
+# from flask_moment import Moment
+# from flask_migrate import Migrate
 import datetime
 from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
+# from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
@@ -19,6 +19,7 @@ from forms import *
 import collections
 from models import *
 from sqlalchemy import desc
+from db import app
 collections.Callable = collections.abc.Callable  #by me
 #installed a lesser version of jinja2 to be compatible with flask_moment
 # installed Werkzeug==2.0.0 to stop the error --> cannot import name 'safe_str_cmp' from 'werkzeug.security'
@@ -26,11 +27,11 @@ collections.Callable = collections.abc.Callable  #by me
 # App Config.
 #----------------------------------------------------------------------------#
 
-app = Flask(__name__)
-moment = Moment(app)
-app.config.from_object('config')
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+# app = Flask(__name__)
+# moment = Moment(app)
+# app.config.from_object('config')
+# db = SQLAlchemy(app)
+# migrate = Migrate(app, db)
 
 
 # TODO: connect to a local postgresql database
@@ -39,51 +40,51 @@ migrate = Migrate(app, db)
 # Models.
 #----------------------------------------------------------------------------#
 
-import models
+# import models
 # models.py
-class Events(db.Model):
-  __tablename__ = 'Events'
-  id = db.Column(db.Integer,primary_key=True, nullable=False, autoincrement=True)
-  artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), primary_key=True)
-  venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), primary_key=True)
-  start_time = db.Column(db.DateTime,nullable=False)
+# class Events(db.Model):
+#   __tablename__ = 'Events'
+#   id = db.Column(db.Integer,primary_key=True, nullable=False, autoincrement=True)
+#   artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), primary_key=True)
+#   venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), primary_key=True)
+#   start_time = db.Column(db.DateTime,nullable=False)
 
-class Venue(db.Model):
-    __tablename__ = 'Venue'
+# class Venue(db.Model):
+#     __tablename__ = 'Venue'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    geners = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    website_link = db.Column(db.String(120))
-    seeking_description = db.Column(db.String(500))
-    looking_for_talent = db.Column(db.Boolean, default = False)
-    shows = db.relationship('Events', backref='venue',cascade='all, delete-orphan', lazy = True)
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String)
+#     city = db.Column(db.String(120))
+#     state = db.Column(db.String(120))
+#     address = db.Column(db.String(120))
+#     phone = db.Column(db.String(120))
+#     geners = db.Column(db.String(120))
+#     image_link = db.Column(db.String(500))
+#     facebook_link = db.Column(db.String(120))
+#     website_link = db.Column(db.String(120))
+#     seeking_description = db.Column(db.String(500))
+#     looking_for_talent = db.Column(db.Boolean, default = False)
+#     shows = db.relationship('Events', backref='venue',cascade='all, delete-orphan', lazy = True)
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-    def __repr__(self):
-        return f'<Venue {self.id} {self.name}>'
-class Artist(db.Model):
-    __tablename__ = 'Artist'
+#     # TODO: implement any missing fields, as a database migration using Flask-Migrate
+#     def __repr__(self):
+#         return f'<Venue {self.id} {self.name}>'
+# class Artist(db.Model):
+#     __tablename__ = 'Artist'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    image_links = db.Column(db.String(500))
-    website_link = db.Column(db.String(120))
-    facebook_link = db.Column(db.String(120))
-    looking_for_venue = db.Column(db.Boolean, default = False)
-    seeking_description = db.Column(db.String(500))
-    shows = db.relationship('Events', backref='artist',cascade='all, delete-orphan', lazy = True)
-    booking_days = db.Column(db.String(500), default='Monday,Tuesday,Wednesday', nullable=True)
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String)
+#     city = db.Column(db.String(120))
+#     state = db.Column(db.String(120))
+#     phone = db.Column(db.String(120))
+#     genres = db.Column(db.String(120))
+#     image_links = db.Column(db.String(500))
+#     website_link = db.Column(db.String(120))
+#     facebook_link = db.Column(db.String(120))
+#     looking_for_venue = db.Column(db.Boolean, default = False)
+#     seeking_description = db.Column(db.String(500))
+#     shows = db.relationship('Events', backref='artist',cascade='all, delete-orphan', lazy = True)
+#     booking_days = db.Column(db.String(500), default='Monday,Tuesday,Wednesday', nullable=True)
 
     
 
@@ -491,16 +492,17 @@ def create_show_submission():
     venue_id = request.form.get('venue_id')
     artist_id = request.form.get('artist_id')
     start_time = request.form.get('start_time')
-    format = '%Y-%m-%d %H:%M:%S'
-    converted_time = datetime.strptime(start_time, format)
     artist = Artist.query.get(artist_id)
-    day = getDayOfTheWeek(converted_time)
-    availableDays = seperateItems(artist.booking_days)
-    print(day)
-    print(availableDays)
-    if day not in availableDays:
-      flash('The Artist is Not available at the moment! check artist Profile to see when Artist will be available')
-      return redirect(url_for('shows/create'))
+
+    if artist.booking_days:
+      print('#################')
+      format = '%Y-%m-%d %H:%M:%S'
+      converted_time = datetime.strptime(start_time, format)
+      day = getDayOfTheWeek(converted_time)
+      availableDays = seperateItems(artist.booking_days)
+      if day not in availableDays:
+        flash('The Artist is Not available at the moment! check artist Profile to see when Artist will be available')
+        return redirect(url_for('shows/create'))
     
 
     venue = Venue.query.get(venue_id)
