@@ -81,6 +81,7 @@ class Artist(db.Model):
     looking_for_venue = db.Column(db.Boolean, default = False)
     seeking_description = db.Column(db.String(500))
     shows = db.relationship('Events', backref='artist',cascade='all, delete-orphan', lazy = True)
+    booking_days = db.Column(db.String(500), default='Monday,Tuesday,Wednesday', nullable=True)
 
     
 
@@ -117,15 +118,16 @@ def index():
   venues = Venue.query.order_by(desc('id')).all()[:5]
   event = Events.query.filter_by(id=1).all()[0]
   date = event.start_time
-  weekday = date.weekday()
-  weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Sarturday','Sunday']
-  for item in weekdays:
-    if item.index = weekday:
-      print(weekdays[weekday])
+  getDayOfTheWeek(date)
   context = {'venues':venues, 'artists':artists}
   return render_template('pages/home.html', data=context)
 
-
+def getDayOfTheWeek(date):
+  weekday = date.weekday()
+  weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Sarturday','Sunday']
+  for item in weekdays:
+    if weekdays.index(item) == weekday:
+      print(weekdays[weekday-1])
 #  Venues
 #  ----------------------------------------------------------------
 
@@ -243,8 +245,6 @@ def delete_venue(venue_id):
     print(event)
     db.session.delete(venue)
     db.session.commit()
-    db.session.delete(event)
-    db.session.commit()
 
   except:
     db.session.rollback()
@@ -340,6 +340,7 @@ def edit_artist_submission(artist_id):
     artist.image_link = request.form.get('image_link')
     artist.website_link = request.form.get('website_link')
     seeking_venue = request.form.get('seeking_venue')
+    artist.booking_days = request.form.get('booking_days')
     if seeking_venue == 'y':
       artist.looking_for_venue = True
     else:
@@ -415,6 +416,7 @@ def create_artist_submission():
   website_link = request.form.get('website_link')
   seeking_venue = request.form.get('seeking_venue')
   seeking_description = request.form.get('seeking_description')
+  booking_days = request.form.get('booking_days')
   try:
     if seeking_venue == 'y':
       seeking_venue = True
@@ -422,7 +424,7 @@ def create_artist_submission():
       seeking_venue = False
     artist = Artist(name=name,city=city,state=state,phone=phone,genres=genres,
                   facebook_link=facebook_link,image_links=image_link,looking_for_venue=seeking_venue,
-                  seeking_description=seeking_description, website_link=website_link)
+                  seeking_description=seeking_description, website_link=website_link, booking_days=booking_days)
     
     db.session.add(artist)
     db.session.commit()

@@ -194,7 +194,7 @@ class ArtistForm(Form):
     phone = StringField(
         # TODO implement validation logic for state
         'phone',
-        validators=[DataRequired(),Length(min=2, max=20)]
+        validators=[DataRequired(),Length(min=5, max=12)]
     )
     image_link = StringField(
         'image_link'
@@ -236,5 +236,9 @@ class ArtistForm(Form):
 
     seeking_description = StringField(
             'seeking_description'
+     )
+
+    booking_days = StringField(
+        'booking_days'
      )
 

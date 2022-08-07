@@ -28,6 +28,15 @@
 		<p>
 			<i class="fab fa-facebook-f"></i> {% if artist.data.facebook_link %}<a href="{{ artist.data.facebook_link }}" target="_blank">{{ artist.data.facebook_link }}</a>{% else %}No Facebook Link{% endif %}
         </p>
+		{% if artist.data.booking_days %}
+		<p class="not-seeking">
+			<i class="fas fa-star"></i><b>Available Only On:</b> {{artist.data.booking_days}}
+		</p>
+		{% else %}
+		<p class="not-seeking">
+			<i class="fas fa-star"></i><b>Available Only On:</b> Anytime Anywhere ):
+		</p>
+		{% endif %}
 		{% if artist.data.looking_for_venue %}
 		<div class="seeking">
 			<p class="lead">Currently seeking performance venues</p>
