@@ -39,54 +39,7 @@ collections.Callable = collections.abc.Callable  #by me
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
-
-# import models
-# models.py
-# class Events(db.Model):
-#   __tablename__ = 'Events'
-#   id = db.Column(db.Integer,primary_key=True, nullable=False, autoincrement=True)
-#   artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), primary_key=True)
-#   venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), primary_key=True)
-#   start_time = db.Column(db.DateTime,nullable=False)
-
-# class Venue(db.Model):
-#     __tablename__ = 'Venue'
-
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String)
-#     city = db.Column(db.String(120))
-#     state = db.Column(db.String(120))
-#     address = db.Column(db.String(120))
-#     phone = db.Column(db.String(120))
-#     geners = db.Column(db.String(120))
-#     image_link = db.Column(db.String(500))
-#     facebook_link = db.Column(db.String(120))
-#     website_link = db.Column(db.String(120))
-#     seeking_description = db.Column(db.String(500))
-#     looking_for_talent = db.Column(db.Boolean, default = False)
-#     shows = db.relationship('Events', backref='venue',cascade='all, delete-orphan', lazy = True)
-
-#     # TODO: implement any missing fields, as a database migration using Flask-Migrate
-#     def __repr__(self):
-#         return f'<Venue {self.id} {self.name}>'
-# class Artist(db.Model):
-#     __tablename__ = 'Artist'
-
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String)
-#     city = db.Column(db.String(120))
-#     state = db.Column(db.String(120))
-#     phone = db.Column(db.String(120))
-#     genres = db.Column(db.String(120))
-#     image_links = db.Column(db.String(500))
-#     website_link = db.Column(db.String(120))
-#     facebook_link = db.Column(db.String(120))
-#     looking_for_venue = db.Column(db.Boolean, default = False)
-#     seeking_description = db.Column(db.String(500))
-#     shows = db.relationship('Events', backref='artist',cascade='all, delete-orphan', lazy = True)
-#     booking_days = db.Column(db.String(500), default='Monday,Tuesday,Wednesday', nullable=True)
-
-    
+# Go to models.py file
 
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
@@ -115,19 +68,19 @@ app.jinja_env.filters['datetime'] = format_datetime
 # Controllers.
 #----------------------------------------------------------------------------#
 def seperateItems(item):
-  if item == None:
-    return None
   my_list = item.split(",")
-  if len(my_list)>1:
-    last = my_list[-1]
-    if last[-1] == '}':
-      last = last.rstrip(last[-1])
-    first = my_list[0]
-    if first[0] == '{':
-      first = first.lstrip(first[0])
-    my_list[0] = first
-    my_list[-1] = last
-    return my_list
+  # if len(my_list)>1:
+  last = my_list[-1]
+  if last[-1] == '}':
+    last = last.rstrip(last[-1])
+  first = my_list[0]
+  if first[0] == '{':
+    first = first.lstrip(first[0])
+  my_list[0] = first
+  my_list[-1] = last
+  if my_list[0][0] == '{':
+    my_list[0].lstrip(my_list[0][0])
+  return my_list
 
 def getDayOfTheWeek(date):
   # print(type(date))
@@ -194,14 +147,7 @@ def show_venue(venue_id):
       past_shows.append(items) 
   data = Venue.query.get(venue_id)
   my_string = data.geners
-  my_list = my_string.split(",")
-  if len(my_list)>1:
-    last = my_list[-1]
-    last = last.rstrip(last[-1])
-    first = my_list[0]
-    first = first.lstrip(first[0])
-    my_list[0] = first
-    my_list[-1] = last
+  my_list = seperateItems(my_string)
   context = {"data":data,'upcoming_shows':upcoming_shows,"past_shows":past_shows,'geners':my_list}
   return render_template('pages/show_venue.html', venue=context)
 
@@ -345,7 +291,6 @@ def show_artist(artist_id):
   availableDays = data.booking_days
   my_list = seperateItems(my_string)
   my_days_of_work = seperateItems(availableDays)
-  print(my_days_of_work)
   context = {"data":data,'upcoming_shows':upcoming_shows,"past_shows":past_shows,"geners":my_list,'WorkingDays':my_days_of_work}
   return render_template('pages/show_artist.html', artist=context)
 

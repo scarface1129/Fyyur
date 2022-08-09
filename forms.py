@@ -194,7 +194,7 @@ class ArtistForm(Form):
     phone = StringField(
         # TODO implement validation logic for state
         'phone',
-        validators=[DataRequired(),Length(min=5, max=12)]
+        validators=[DataRequired(),Length(min=10, max=11, message='Name length must be between %(min)d and %(max)dcharacters')]
     )
     image_link = StringField(
         'image_link'
@@ -225,7 +225,7 @@ class ArtistForm(Form):
      )
     facebook_link = StringField(
         # TODO implement enum restriction
-        'facebook_link', validators=[URL()]
+        'facebook_link', validators=[URL(),DataRequired()]
      )
 
     website_link = StringField(
